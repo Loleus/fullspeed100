@@ -31,9 +31,9 @@ function Hold({
       onPointerCancel={set(false)}
       onContextMenu={(e) => e.preventDefault()}
       className={cn(
-        // `shrink-0`: without it flex squashes the buttons when the row overflows
-        // on a narrow phone, which makes neighbours visually touch
-        "retro-touch flex shrink-0 flex-col items-center justify-center leading-none font-bold",
+        // no `shrink-0` needed: in a grid the button fills its own 1fr cell, which
+        // can never be stolen by a neighbour – that is what keeps the spacing equal
+        "retro-touch flex flex-col items-center justify-center text-center leading-none font-bold",
         className,
       )}
     >
@@ -57,33 +57,48 @@ function Hold({
  * outside so the pedals stay together.
  */
 export function TouchControls() {
+  /*
+    FIVE equal columns across the full width – no flexbox, no `justify-between`.
+
+    With flex the buttons were squashed on real phones, the gaps between the groups
+    collapsed and nothing lined up with the screen edges. A grid cannot do any of
+    that: every button owns exactly one 1fr cell, the column gap is one single
+    value, and the row is centred and symmetric by construction.
+
+        ◀  ▶  ␣  ↓  ↑
+        └─ 5 × 1fr, gap 12px, cells 56–64 px ─┘
+
+    Buttons fill their cell (square, capped at 64 px), so on a 360 px phone they
+    are ~56 px each and never touch.
+  */
   return (
     <div
-      // `gap-6` keeps a clear lane between the steering pad and the pedal cluster:
-      // on a narrow phone the two groups used to end up shoulder to shoulder.
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-end justify-between gap-6 px-3 select-none lg:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 select-none lg:hidden"
       style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
     >
-      <div className="pointer-events-auto flex shrink-0 items-end gap-3">
-        <Hold name="left" label="◀" className="h-16 w-16 text-2xl" />
-        <Hold name="right" label="▶" className="h-16 w-16 text-2xl" />
-      </div>
-
-      {/*
-        Right cluster, left → right: SPACE (handbrake) on the outside,
-        then ↓ (brake) and ↑ (gas) together – the pedals are one pair, exactly like
-        the arrow keys. All of them are the same 64 px square; only the colours
-        separate them, so the strip stays even and easy to hit with a thumb.
-      */}
-      <div className="pointer-events-auto flex shrink-0 items-end gap-3">
+      <div
+        className="pointer-events-auto mx-auto grid w-full max-w-[440px] grid-cols-5 items-end justify-items-center gap-2 px-3 sm:gap-3"
+      >
+        <Hold name="left" label="◀" className="aspect-square w-full max-w-[64px] text-2xl" />
+        <Hold name="right" label="▶" className="aspect-square w-full max-w-[64px] text-2xl" />
         <Hold
           name="brake"
-          label="SPACJA"
-          hint="ręczny"
-          className="retro-touch-red h-16 w-16 text-[10px]"
+          label="␣"
+          hint="RĘCZNY"
+          className="retro-touch-red aspect-square w-full max-w-[64px] text-xl"
         />
-        <Hold name="down" label="↓" hint="hamulec" className="h-16 w-16 text-2xl" />
-        <Hold name="up" label="↑" hint="gaz" className="h-16 w-16 text-2xl" />
+        <Hold
+          name="down"
+          label="↓"
+          hint="HAM"
+          className="aspect-square w-full max-w-[64px] text-2xl"
+        />
+        <Hold
+          name="up"
+          label="↑"
+          hint="GAZ"
+          className="aspect-square w-full max-w-[64px] text-2xl"
+        />
       </div>
     </div>
   );
