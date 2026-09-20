@@ -373,26 +373,34 @@ export class PlayerCar {
     const len = Math.hypot(dx, dy) || 1;
 
     const v = velocityPxPerSec(b);
-    // a side contact pushes mostly PERPENDICULAR (you are dragged away from the
-    // other flank), a rear hit mainly along the road
+    /*
+      Zone-weighted reaction, deliberately MODEST – see PLAYER_BOUNCE_MAX: Matter has
+      already resolved the contact, this only shapes it.
+        side   – dragged away from the other flank (perpendicular),
+        corner – a shorter version of the same,
+        rear   – almost no push at all: a nose-to-tail hit is about LOSING SPEED,
+                 not about being thrown. Adding a full kick here launched the car.
+    */
     const push =
       s *
       (zone === "side"
-        ? C.SIDE_KICK_PERP
+        ? C.SIDE_KICK_PERP * 0.5
         : zone === "corner"
-          ? C.CORNER_KICK
-          : C.PLAYER_BOUNCE_MAX);
+          ? C.CORNER_KICK * 0.5
+          : C.PLAYER_BOUNCE_MAX * 0.3);
     let vx = v.x + (dx / len) * push;
     let vy = v.y + (dy / len) * push;
-    // a real hit costs momentum as well – no "brushing through" a car
-    vy *= 1 - C.PLAYER_BOUNCE_LOSS * s;
+    // momentum loss: it stays meaningful (no "brushing through" a car) and is what
+    // makes a rear-end feel like a hit instead of a bounce
+    const loss = zone === "rear" ? C.PLAYER_REAR_LOSS : C.PLAYER_BOUNCE_LOSS;
+    vy *= 1 - loss * s;
     vx = clamp(vx, -C.PLAYER_BOUNCE_MAX, C.PLAYER_BOUNCE_MAX);
     setVelocityPxPerSec(b, vx, vy);
     // ...and the tyres are unsettled for a moment, so the bounce survives
     this.impactTimer = Math.max(this.impactTimer, C.PLAYER_HIT_GRIP_S * (0.6 + 0.6 * s));
-    // ...and a real twist. Zone-weighted: a corner clip or a side swipe throws the
-    // car off line properly, a rear-end shunt mostly just slows it down.
-    const spinFactor = zone === "rear" ? 0.45 : zone === "corner" ? 1 : 0.85;
+    // ...and a twist. Zone-weighted, and kept in check: a nose-to-tail shunt mostly
+    // slows the car down (a big spin there was part of the "kosmos" effect).
+    const spinFactor = zone === "rear" ? 0.2 : zone === "corner" ? 0.9 : 0.7;
     setAngularVelocityRadPerSec(
       b,
       clamp(

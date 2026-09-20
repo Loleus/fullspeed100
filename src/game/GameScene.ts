@@ -613,7 +613,10 @@ export class GameScene extends Phaser.Scene {
     // two cars are closing at the SUM of their speeds, and the recoil is a full
     // one (bounceZone), so a corner-to-corner clash at 600 km/h kills.
     const bounceZone: C.ContactZone = headOn ? "rear" : zone;
-    const strength = clamp(closingKmh / 160, 0.3, 1);
+    // `/ 220` instead of `/ 160`: a light touch now maps to a small impulse (0.3 →
+    // 0.3) while only a real smack reaches full strength, so nudging the car in
+    // front no longer behaves like a full-speed impact.
+    const strength = clamp(closingKmh / 220, 0.25, 1);
     victim?.applyImpact(strength, contact.x, contact.y, bounceZone);
     // Running into the player's WRECK destroys the other car: it is trashed on
     // the spot, stops and stays on screen (see OpponentCar#trash).
@@ -629,12 +632,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (other.label === "wall") {
-      const fatal = closingKmh >= C.FATAL_IMPACT_KPH;
-      this.hitPlayer(
-        fatal ? 999 : closingKmh * C.DAMAGE_PER_KPH_WALL,
-        closingKmh,
-        contact,
-      );
+      // Same formula as a car contact, just a different share of the reference bill
+      // (see constants.WALL_SCALE) – so a rail is no longer deadlier than a crash.
+      const damage = (closingKmh / C.FULL_IMPACT_KPH) * C.WALL_SCALE * 100;
+      const fatal = damage >= 100 && closingKmh >= C.MIN_FATAL_KPH;
+      this.hitPlayer(fatal ? 999 : damage, closingKmh, contact, fatal);
       return;
     }
 
@@ -766,7 +768,7 @@ export class GameScene extends Phaser.Scene {
       const bounceZone: C.ContactZone = headOn ? "rear" : zone;
 
       if (closingKmh >= C.MIN_IMPACT_KPH) {
-        const strength = clamp(closingKmh / 160, 0.3, 1);
+        const strength = clamp(closingKmh / 220, 0.25, 1);
         o.applyImpact(strength, hit.contact.x, hit.contact.y, bounceZone);
         if (!p.alive) {
           o.trash();

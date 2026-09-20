@@ -52,14 +52,29 @@ export function resolveImpact(
   const scale = headOn ? C.CONTACT_SCALE.headOn : C.CONTACT_SCALE[zone];
   // damage relative to the reference contact, in percent of the car's health
   const damage = (impactKmh / C.FULL_IMPACT_KPH) * scale * 100;
-  // Two conditions, so a light contact can never kill: the bill has to reach
-  // 100 % AND the closing speed has to be a real one (no "fatal rubs").
-  const fatal = damage >= 100 && impactKmh >= C.MIN_FATAL_KPH;
+
+  /*
+    A LIGHT touch can never be fatal, whatever the zone says.
+
+    Bumping the EDGE of another car counts as a "corner" contact, and with the
+    corner bill at 0.5 a 120 km/h difference reached 60 % in one contact – two of
+    those and the run was over ("za najechanie na krawędź auta pada całe").
+    So there is a floor of common sense on top of the zone logic:
+      • under 150 km/h of closing speed nothing dies unless it is a head-on,
+      • under 40 km/h the corner/side bill is halved – at parking speeds a clip is
+        a scratch, not a crash.
+  */
+  const wellFatal =
+    impactKmh >= (headOn ? C.MIN_FATAL_KPH : C.MIN_FATAL_SIDE_KPH);
+  const softFactor = impactKmh < C.SOFT_CONTACT_KPH && !headOn ? 0.5 : 1;
+  const billed = damage * softFactor;
+  const fatal = billed >= 100 && wellFatal;
 
   return {
-    damage: fatal ? 999 : damage,
+    damage: fatal ? 999 : billed,
     fatal,
-    strength: Math.max(0.15, Math.min(1, impactKmh / 160)),
+    // `/ 200`: a light touch maps to a light impulse, only a real smack is full
+    strength: Math.max(0.15, Math.min(1, impactKmh / 200)),
     scale,
     headOnFatal: fatal && headOn,
   };

@@ -403,14 +403,21 @@ export const WRECK_SHOVE_MAX_PX = 1200; // ≈ 216 km/h, hard ceiling
 export const CRASH_PARTNER_ALONG_PX = 150; // ≈ 1.9 car lengths, fore/aft
 export const CRASH_PARTNER_ACROSS_PX = 44; // ≈ 1.4 car widths, same lane
 
-/** Player: lateral kick of an impact resolved without Matter (px/s ≈ 47 km/h). */
-export const PLAYER_BOUNCE_MAX = 260;
 /**
- * How hard a contact twists the player's car (rad/s at full strength).
- * A corner clip or a side swipe must visibly throw the car off line – the old
- * flat 1.5 rad/s was barely noticeable at motorway speed.
+ * Player: the extra impulse we add ON TOP of what Matter's solver already did.
+ *
+ * It has to stay small. The solver resolves the contact by itself, so a large
+ * manual kick here simply doubled the reaction – "ledwo dotknę tyłu i wypierdala
+ * mnie w kosmos". Its job is only to make the push readable and to bleed speed.
  */
-export const PLAYER_HIT_SPIN = 2.8;
+export const PLAYER_BOUNCE_MAX = 130;
+/** Speed lost on a nose-to-tail hit (share of the current speed at full strength). */
+export const PLAYER_REAR_LOSS = 0.35;
+/**
+ * How hard a contact twists the player's car (rad/s at full strength). Enough to
+ * feel it, not enough to spin the car on the spot.
+ */
+export const PLAYER_HIT_SPIN = 1.6;
 /** Player: forward momentum kept after such an impact (0.85 = 15 % lost). */
 export const PLAYER_BOUNCE_LOSS = 0.15;
 /** Below this speed the extra collision scrub does nothing. */
@@ -657,10 +664,17 @@ export const MIN_SCRAPE_KPH = 1.5;
  */
 export const SCRAPE_DAMAGE = 1.2;
 /** Grip lost per km/h of grinding speed, in percent of health. */
-export const GRIND_DAMAGE_PER_KPH = 0.11;
+/**
+ * Rubbing along another car ("rozpychanie się" between two cars) is billed per
+ * contact, and contacts repeat every SCRAPE_COOLDOWN_MS while the bodies touch:
+ * at 0.11 this was ~25 %/s of grinding, low enough to squeeze through traffic with
+ * a half-emptied bar. At 0.22 it is ~50 %/s, i.e. a sustained shove really eats the
+ * car, while a single light brush still costs almost nothing.
+ */
+export const GRIND_DAMAGE_PER_KPH = 0.22;
 /** Bounds so a light brush cannot cost nothing and a long grind cannot nuke. */
-export const GRIND_DAMAGE_MIN = 1;
-export const GRIND_DAMAGE_MAX = 15;
+export const GRIND_DAMAGE_MIN = 1.2;
+export const GRIND_DAMAGE_MAX = 28;
 
 /**
  * Player: after a contact the tyres lose grip for a moment. Without it the
@@ -707,13 +721,24 @@ export const FULL_IMPACT_KPH = 100;
  */
 export const CONTACT_SCALE = {
   headOn: 1,
-  side: 0.3,
-  corner: 0.26,
-  // Rear-ending is now properly expensive: at 100 km/h of closing speed it costs
-  // 75 % of the car's health (it used to be 45 %), so running into the car in
-  // front really hurts even when both drive the same way.
-  rear: 0.75,
+  // Pushing a way between two cars ("rozpychanie się") is a proper crash, not a free
+  // pass: 100 km/h of closing speed along the flank costs 80 % of the health.
+  side: 0.8,
+  corner: 0.5,
+  // Running into the car ahead costs 90 % at 100 km/h of closing speed.
+  rear: 0.9,
 } as const;
+
+/**
+ * The guard rail – on the SAME scale as everything else.
+ *
+ * It used to be a flat `kmh × 0.62`: brushing a barrier at 100 km/h instantly
+ * removed 62 % of the car, while a side swipe against another car cost only 30 %.
+ * That is why touching a rail felt like instant scrap. A rail now sits between a
+ * corner clip and a head-on: 40 % at 100 km/h, fatal only from 250 km/h of closing
+ * speed.
+ */
+export const WALL_SCALE = 0.4;
 
 /** Below this speed the contact is a scrape/knock, not an impact. */
 export const MIN_IMPACT_KPH = 12;
@@ -722,6 +747,13 @@ export const MIN_IMPACT_KPH = 12;
  * Belt and braces against a misclassified scrape ending the run.
  */
 export const MIN_FATAL_KPH = 90;
+/**
+ * Same idea for the side/corner/rear zones: only a serious difference of speed may
+ * write the car off. A corner clip at 120 km/h is a big dent, not the end of the run.
+ */
+export const MIN_FATAL_SIDE_KPH = 150;
+/** Below this closing speed the corner/side bill is halved (a clip, not a crash). */
+export const SOFT_CONTACT_KPH = 40;
 
 /** Sideways kick of an AI car on a full-strength SIDE contact (px/s). */
 export const SIDE_KICK = 460;
