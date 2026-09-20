@@ -77,9 +77,6 @@ export class GameScene extends Phaser.Scene {
    */
 
 
-  /** incremented by every fixed physics step (safety net for the render loop) */
-  private stepStamp = 0;
-  private seenStamp = 0;
   /** set on scene shutdown, so late events cannot touch destroyed bodies */
   private destroyed = false;
   private pairWarningLogged = false;
@@ -192,10 +189,8 @@ export class GameScene extends Phaser.Scene {
       20 Hz for the dashboard.
 
       The chronograph shows HUNDREDTHS, so the refresh rate has to be fast enough
-      for them to visibly tick: at 10 Hz the last two digits jumped in steps of ten
-      and between refreshes the value simply stood still ("setne części sekundy
-      stoją w miejscu"). At 20 Hz every refresh advances them by ~5, which reads as
-      a running clock.
+      for them to visibly tick: at 20 Hz every refresh advances them by ~5, which
+      reads as a running clock.
 
       That is still cheap: `emitHud` reuses one object and skips the React update
       entirely whenever nothing visible changed (standing still, menu, frozen
@@ -379,7 +374,6 @@ export class GameScene extends Phaser.Scene {
   // Fixed physics step (runs once per Matter engine step, 60 Hz)
   // ---------------------------------------------------------------------
   private onPhysicsStep(): void {
-    this.stepStamp++;
     try {
       this.physicsStep();
     } catch (err) {
@@ -529,8 +523,6 @@ export class GameScene extends Phaser.Scene {
       if (!pair) continue;
       try {
         this.handleCollisionPair(pair, playerBody);
-        this.handleCarVsCar(pair);
-        this.handleWreckedAgainstWall(pair);
       } catch (err) {
         if (!this.pairWarningLogged) {
           this.pairWarningLogged = true;
@@ -643,60 +635,6 @@ export class GameScene extends Phaser.Scene {
     // car-on-car: the zone and the direction decide the bill
     const outcome = resolveImpact(closingKmh, zone, headOn);
     this.hitPlayer(outcome.damage, closingKmh, contact, outcome.fatal);
-  }
-
-  /**
-   * Opponent ↔ opponent (and opponent ↔ wreck) contacts.
-   *
-   * Matter resolves these bodies itself, but it has no idea the AI cars are
-   * "driven": its own impulse is what makes a pushed car spin off its line, and
-   * the driver model then reels it back in. We only add what the solver cannot
-   * know: the hit timer, so the car that was rammed stops correcting its lane for
-   * a moment (otherwise it snaps straight back into the car that pushed it), and
-   * the wreck handling – a live car touching a wreck is written off by it.
-   */
-  private handleCarVsCar(pair: CollisionPairLike): void {
-    const a = pair.bodyA;
-    const b = pair.bodyB;
-    if (!a || !b) return;
-    if (a.label !== "opponent" || b.label !== "opponent") return;
-
-    const carA = this.opponentForBody(a);
-    const carB = this.opponentForBody(b);
-    if (!carA || !carB) return;
-
-    // wreck involved: the moving car is scrapped and the wreck is pinned
-    if (carA.isWrecked !== carB.isWrecked) {
-      const live = carA.isWrecked ? carB : carA;
-      const dead = carA.isWrecked ? carA : carB;
-      if (!live.isWrecked) {
-        live.trash();
-        dead.freeze();
-        this.fx.burstSparks(live.x, live.y, 10);
-      }
-      return;
-    }
-    if (carA.isWrecked) return; // both are scrap, nothing to do
-
-    // two driving cars: both get unsettled, so neither snaps back instantly
-    carA.unsettle();
-    carB.unsettle();
-  }
-
-  /**
-   * A wrecked opponent that touched a guard rail is stopped dead on the spot –
-   * it must not keep scraping along the barrier ("a on po nich jedzie dalej").
-   */
-  private handleWreckedAgainstWall(pair: CollisionPairLike): void {
-    const a = pair.bodyA;
-    const b = pair.bodyB;
-    if (!a || !b) return;
-    const wall = a.label === "wall" ? a : b.label === "wall" ? b : null;
-    if (!wall) return;
-    const otherBody = wall === a ? b : a;
-    if (otherBody.label !== "opponent") return;
-    const car = this.opponentForBody(otherBody);
-    if (car?.isWrecked) car.freeze();
   }
 
   /** Finds the AI car that owns a Matter body (used to push it on contact). */
@@ -852,12 +790,6 @@ export class GameScene extends Phaser.Scene {
 
   private updateFrame(delta: number): void {
     if (this.destroyed || !this.player || !this.player.body) return;
-    // Safety net: if the Matter "beforeupdate" hook did not run since our last
-    // frame, drive the simulation from the render loop so traffic, countdown
-    // and collisions always advance.
-    if (this.stepStamp === this.seenStamp) this.onPhysicsStep();
-    this.seenStamp = this.stepStamp;
-
     const p = this.player;
 
     // ---- render interpolation -------------------------------------------

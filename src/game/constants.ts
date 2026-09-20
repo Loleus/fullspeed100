@@ -243,12 +243,10 @@ export const OPPONENT_MASS = 110;
  * Collision categories. Every car collides with EVERYTHING except itself:
  * the player, the other cars and both guard rails.
  *
- * Cars must collide with each other: if you shove one opponent aside it has to be
- * able to hit the car next to it, and that one can then be knocked into the
- * barriers – chain reactions are half the fun of a crash. Disabling those pairs
- * was tried while hunting the stutter; the real cause was the number of bodies
- * (12 opponents instead of 6), so the pairs are back and the traffic is lighter
- * instead.
+ * Opponents are driven by their own lane model and the scene's wreck scan. They
+ * do not need Matter solver pairs against every other opponent; those pairs add
+ * collision work and can create repeated contact events without affecting the
+ * player. Only player/opponent and player/wall contacts belong in Matter.
  */
 export const CATEGORY_PLAYER = 0x0001;
 export const CATEGORY_OPPONENT = 0x0002;
@@ -262,7 +260,7 @@ export const FILTER_PLAYER = {
 };
 export const FILTER_OPPONENT = {
   category: CATEGORY_OPPONENT,
-  mask: CATEGORY_WALL | CATEGORY_PLAYER | CATEGORY_OPPONENT,
+  mask: CATEGORY_PLAYER,
   group: 0,
 };
 export const FILTER_WALL = {

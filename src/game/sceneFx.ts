@@ -20,6 +20,8 @@ export class SceneFx {
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter;
   private smoke!: Phaser.GameObjects.Particles.ParticleEmitter;
   private skid!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private scene: Phaser.Scene | null = null;
+  private initialized = false;
 
   private skidAcc = 0;
   private smokeAcc = 0;
@@ -28,6 +30,7 @@ export class SceneFx {
   private smokeCursor = 0;
 
   create(scene: Phaser.Scene): void {
+    this.scene = scene;
     // diagnostic switch: ?no=fx replaces every emitter with a no-op
     if (!DEBUG.fx) {
       const noop = {
@@ -38,8 +41,17 @@ export class SceneFx {
       this.sparks = noop as unknown as Phaser.GameObjects.Particles.ParticleEmitter;
       this.smoke = noop as unknown as Phaser.GameObjects.Particles.ParticleEmitter;
       this.skid = noop as unknown as Phaser.GameObjects.Particles.ParticleEmitter;
+      this.initialized = true;
       return;
     }
+    this.ensureEmitters();
+  }
+
+  private ensureEmitters(): void {
+    if (this.initialized) return;
+    this.initialized = true;
+    const scene = this.scene;
+    if (!scene) return;
     // speeds scaled with the world (which scrolls 5.556 px per km/h), otherwise
     // the sparks would look glued to the car
     this.sparks = scene.add
@@ -48,7 +60,7 @@ export class SceneFx {
         speed: { min: 180, max: 900 },
         scale: { start: 1.1, end: 0 },
         quantity: 0,
-        maxParticles: 140,
+        maxParticles: 48,
         blendMode: "ADD",
         emitting: false,
         tint: [0xffc857, 0xffffff, 0xff7b2e],
@@ -62,7 +74,7 @@ export class SceneFx {
         scale: { start: 1.5, end: 3.0 },
         alpha: { start: 0.5, end: 0 },
         quantity: 0,
-        maxParticles: 160,
+        maxParticles: 64,
         emitting: false,
         tint: [0xe8e8e8, 0xa9a9a9, 0x4a4a4a],
       })
@@ -79,13 +91,19 @@ export class SceneFx {
         // hard ceilings: particle objects are the one thing the game creates in
         // real volume, and an unbounded emitter is the easiest way to make the
         // frame time creep up the longer a run lasts
-        maxParticles: 120,
+        maxParticles: 48,
         tint: 0xdcdcdc,
       })
       .setDepth(7);
   }
 
   reset(): void {
+    if (!this.initialized) {
+      this.skidAcc = 0;
+      this.smokeAcc = 0;
+      this.smokeCursor = 0;
+      return;
+    }
     this.smoke.killAll();
     this.skid.killAll();
     this.skidAcc = 0;
@@ -94,6 +112,7 @@ export class SceneFx {
   }
 
   burstSparks(x: number, y: number, count: number): void {
+    this.ensureEmitters();
     this.sparks.explode(count, x, y);
   }
 
@@ -114,6 +133,7 @@ export class SceneFx {
     rng: Rnd,
   ): void {
     if (count <= 0) return;
+    this.ensureEmitters();
     this.smokeAcc += delta;
     let guard = 0;
     while (this.smokeAcc > SMOKE_EMIT_MS && guard < SMOKE_BURST_MAX) {
@@ -132,11 +152,13 @@ export class SceneFx {
   }
 
   explodeSmoke(x: number, y: number, count: number): void {
+    this.ensureEmitters();
     this.smoke.explode(count, x, y);
   }
 
   /** Tyre smoke under the rear wheels while sliding. */
   skidSmoke(delta: number, wheels: ReadonlyArray<{ x: number; y: number }>): void {
+    this.ensureEmitters();
     this.skidAcc += delta;
     let guard = 0;
     while (this.skidAcc >= SKID_EMIT_MS && guard < SKID_BURST_MAX) {
