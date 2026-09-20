@@ -67,6 +67,8 @@ export class OpponentCar {
   private blockedFor = 0;
   /** Seconds of "not on the road" between two appearances (see LANE_DENSITY). */
   private dwellTimer = 0;
+  /** Extra corridor room right after a spawn (see spawn / fixedStep). */
+  private spawnClearance = 0;
   /**
    * Contact cooldown, stored ON the car (milliseconds on the scene clock).
    * Keeping it here instead of in a Map keyed by Matter's `body.id` matters:
@@ -202,10 +204,72 @@ export class OpponentCar {
     this.appearances = 0;
   }
 
-  /** Corridor half-length for this car: 4 s of its own travel, clamped. */
-  private corridorPx(): number {
-    const speedPx = Math.abs(this.speedKmh) * C.KPH_TO_PX;
-    return clamp(speedPx * C.CORRIDOR_S, C.CORRIDOR_MIN_PX, C.CORRIDOR_MAX_PX);
+  /**
+   * Corridor half-length (px) and re-entry distances, all derived from the RELATIVE
+   * speed between this car and the player.
+   *
+   * This is the fix for "the fast lanes are almost empty": the corridor used to be
+   * `ownSpeed × 4 s`, so a 295 km/h car in lane 2 was allowed to roam 3800 px (190 m)
+   * away from the player – and since the player drives nearly as fast, it took
+   * *minutes* to drift that far, so it was recycled only rarely. Those cars therefore
+   * patiently hovered off screen.
+   *
+   * With the relative speed the numbers mean "seconds until we meet":
+   *   – same direction, 90 km/h apart → corridor 1100 px, recycled after ~4 s,
+   *   – oncoming (500+ km/h of closing speed) → corridor 2200 px, gone in a blink,
+   * so every lane now produces traffic at a similar rate, fastest lanes included.
+   */
+  private relativePx(playerKmh: number): number {
+    const own = Math.abs(this.speedKmh) * C.KPH_TO_PX;
+    const player = Math.abs(playerKmh) * C.KPH_TO_PX;
+    return this.isOncoming ? own + player : Math.abs(own - player);
+  }
+
+  private corridorFor(playerKmh: number): number {
+    // While the player is standing (or crawling) every car is "faster" than him, so
+    // they all belong to the from-behind case and need room behind: the floor is
+    // raised so a stationary player does not squeeze them into a 1000 px box (in
+    // which they would be recycled before they could ever reach him).
+    const rel = Math.max(this.relativePx(playerKmh), 300);
+    const span = clamp(rel * C.CORRIDOR_S, C.CORRIDOR_MIN_PX, C.CORRIDOR_MAX_PX);
+    /*
+      The corridor is measured FROM THE PLAYER in both directions, but a car can
+      only be `span` away in the direction it is travelling: a faster car catches the
+      player up and only ever approaches from BEHIND, so all its room has to be
+      behind him. Splitting the span in half (the first version of the relative-speed
+      corridor) left it only 550–1100 px of room – it was recycled almost immediately
+      and, with the oncoming density breaks, the road ended up empty for tens of
+      seconds. Now: full span behind for cars that overtake, full span ahead for cars
+      the player overtakes.
+    */
+    const fromBehind = this.speedKmh > playerKmh;
+    // Room BEHIND the player: enough for the car to travel one second of the
+    // player's own speed, and never less than the safe re-entry distance – so a car
+    // that drives up from behind always has the room to actually get there.
+    const limit = fromBehind
+      ? Math.max(C.REENTRY_SAFE_MIN_PX, playerKmh * C.KPH_TO_PX * 1.1)
+      : C.CORRIDOR_MAX_PX * 1.6;
+    return Math.min(span, limit);
+  }
+
+  /** How far away this car re-enters – also in the player's frame of reference. */
+  private reentryFor(playerKmh: number, fromBehind: boolean): number {
+    const rel = Math.max(this.relativePx(playerKmh), 120);
+    // The absolute floor (REENTRY_SAFE_MIN_PX) is what stops a recycled car from
+    // being dropped right next to the player: with short corridors the relative
+    // distance could come out as little as 400 px, i.e. inside the bottom edge of
+    // the screen.
+    return fromBehind
+      ? clamp(
+          rel * C.REENTRY_BEHIND_S,
+          Math.max(C.REENTRY_SAFE_MIN_PX, C.REENTRY_BEHIND_MIN_PX),
+          C.REENTRY_BEHIND_MAX_PX,
+        )
+      : clamp(
+          rel * C.REENTRY_AHEAD_S,
+          Math.max(C.REENTRY_SAFE_MIN_PX, C.REENTRY_AHEAD_MIN_PX),
+          C.REENTRY_AHEAD_MAX_PX,
+        );
   }
 
   /** Hide the car far away from the action. */
@@ -348,6 +412,11 @@ export class OpponentCar {
     return rel > this.corridor || rel < -this.corridor - 600;
   }
 
+  /** Corridor currently in force (kept from the last step) – for diagnostics. */
+  get corridorNow(): number {
+    return this.corridor;
+  }
+
   /**
    * Leaves the world for good (used on the results screen: cars that drive away
    * must not be recycled back in – nothing new may enter the road any more).
@@ -459,14 +528,19 @@ export class OpponentCar {
 
     const speedPx = Math.abs(this.speedKmh) * C.KPH_TO_PX;
     const laneFromOuter = C.LANE_COUNT - 1 - this.lane;
-    // start grid: long lead-in, so the player has time to react after "GO!"
-    const gridDist = Math.max(
-      C.START_BEHIND_MIN,
+    /*
+      Start grid: the lead-in is expressed in seconds for a STANDING player, but it
+      is capped in absolute pixels (START_GRID_MAX_PX). Uncapped it grew with the
+      car's own speed – a 295 km/h car started ~9500 px behind and, since the player
+      drives nearly as fast, took ages to catch up (the empty-road complaint).
+    */
+    const gridDist = clamp(
       speedPx * (C.START_ARRIVAL_S + laneFromOuter * C.START_ARRIVAL_STEP_S),
+      C.START_BEHIND_MIN,
+      C.START_GRID_MAX_PX,
     );
-    const reentryDist = fromBehind
-      ? clamp(speedPx * C.REENTRY_BEHIND_S, C.REENTRY_BEHIND_MIN_PX, C.REENTRY_BEHIND_MAX_PX)
-      : clamp(speedPx * C.REENTRY_AHEAD_S, C.REENTRY_AHEAD_MIN_PX, C.REENTRY_AHEAD_MAX_PX);
+    // distance measured in the PLAYER's frame – see reentryFor()
+    const reentryDist = this.reentryFor(playerKmh, fromBehind);
     const dist = first && fromBehind ? gridDist : reentryDist;
 
     let y = playerY + (fromBehind ? dist : -dist);
@@ -484,9 +558,13 @@ export class OpponentCar {
       y += fromBehind ? C.SPAWN_SEPARATION_PX : -C.SPAWN_SEPARATION_PX;
     }
 
-    // corridor: big enough to cover the spawn position, but never more than
-    // CORRIDOR_MAX_PX away from the player
-    this.corridor = Math.max(this.corridorPx(), Math.abs(y - playerY) + 800);
+    // Corridor: the relative-speed formula, but never shorter than where we just
+    // put the car – otherwise it would be recycled on its very first step (the
+    // start grid sits further back than the corridor). `spawnClearance` is dropped
+    // as soon as the car gets close to the player, so the fast cycling resumes
+    // right after each car has passed.
+    this.spawnClearance = Math.abs(y - playerY) + 400;
+    this.corridor = Math.max(this.corridorFor(playerKmh), this.spawnClearance);
     this.startBehindPx = first && fromBehind ? dist : 0;
 
     // start x oscillates a little from appearance to appearance (deterministic
@@ -544,6 +622,22 @@ export class OpponentCar {
       return;
     }
 
+    // The corridor is recomputed every step from the CURRENT relative speed: when
+    // the player speeds up the traffic cycles faster, when he slows down the cars
+    // stop being recycled early.
+    //
+    // The spawn allowance is dropped only when the car is LEVEL with the player
+    // (|Δy| < 400). Two wrong versions came before this one:
+    //   • dropping it at 1200 px recycled cars a moment before they reached the
+    //     player (nothing ever came up from behind),
+    //   • dropping it on `y - playerY < 0` was true IMMEDIATELY for every car placed
+    //     AHEAD – so those were recycled on their first step, which is why the fast
+    //     lanes looked empty.
+    if (this.spawnClearance > 0 && Math.abs(this.y - playerY) < 400) {
+      this.spawnClearance = 0;
+    }
+    this.corridor = Math.max(this.corridorFor(playerKmh), this.spawnClearance);
+
     const rel = this.y - playerY; // > 0: behind the player
     if (spawning && !this.wrecked && (rel > this.corridor || rel < -this.corridor - 600)) {
       /*
@@ -592,6 +686,18 @@ export class OpponentCar {
 
     // Slowing down for the player only makes sense while he drives; a wreck is
     // handled by the collision handler (it trashes the car that hits it).
+    /*
+      NO "start guard" here any more.
+
+      A grace window that braked every same-direction car approaching the standing
+      player looked sensible but was wrong: it applied to the whole carriageway, so
+      during the countdown cars in the OTHER lanes drove up level with the player and
+      stopped there – a traffic jam in the middle of the screen. The protection
+      against a first-second hit is geometric instead: a car may never re-enter
+      closer than REENTRY_SAFE_MIN_PX (2000 px) and the start grid is placed even
+      further back, so the earliest arrival is seconds after "GO!".
+    */
+
     if (!this.isOncoming) {
       // "don't ram slower traffic ahead in my lane" – no closure here: this runs
       // for every car on every step, and a closure per step was pure garbage.
@@ -602,11 +708,12 @@ export class OpponentCar {
       // up behind the player. Everywhere else the traffic just keeps driving: if
       // the player pulls into their lane they plough into him instead of politely
       // braking (that is the whole point of the fast lanes).
-      if (
-        playerAlive &&
-        this.lane === C.START_LANE &&
-        Math.abs(playerKmh) >= C.OPP_QUEUE_MIN_PLAYER_KPH
-      ) {
+      // THE START LANE WAITS – always. While the player stands on the grid, crawls
+      // or drives, a car of the lane he started in queues up behind him instead of
+      // driving through him. The old gate at 25 km/h meant that during the countdown
+      // (and at any low speed) those cars simply rammed a standing player. Every
+      // other lane keeps driving – that is the whole point of the fast lanes.
+      if (playerAlive && this.lane === C.START_LANE) {
         this.consider(playerX, playerY, playerKmh);
       }
       for (let i = 0; i < others.length; i++) {

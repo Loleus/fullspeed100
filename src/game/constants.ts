@@ -91,8 +91,10 @@ export const ROAD_TEX_OFFSET_X = ROAD_TEX_EXTRA_W / 2;
  *
  *   1) where the car sits on screen: 1/7 from the bottom at a standstill
  *      (FRAC_SLOW) to 1/5 from the bottom at v-max (FRAC_FAST);
- *   2) the zoom pulls back from 1.0 to 0.66, which lifts the view exactly like
- *      the classic top-down GTA.
+ *   2) the zoom pulls back from 1.0 to 0.78 (a 0.22 pull-back instead of the
+ *      previous 0.34) – the camera lifts, but no longer climbs that high. That is
+ *      the requested change: about two thirds of the old amount ("0.4 instead of
+ *      0.6"), so the world in front of the car grows ~28 % instead of ~50 %.
  *
  * The road visible AHEAD of the car is  frac × GAME_H / zoom:
  *
@@ -107,6 +109,8 @@ export const ROAD_TEX_OFFSET_X = ROAD_TEX_EXTRA_W / 2;
 export const FRAC_SLOW = 6 / 7; // car 1/7 from the bottom at standstill
 export const FRAC_FAST = 0.8; // car 1/5 from the bottom at v-max
 export const ZOOM_SLOW = 1.0;
+/** Minimum zoom at speed. One number to tweak the whole camera rise: 0.78 is a
+ *  shallow pull-back, 0.66 (the old value) was noticeably higher up. */
 export const ZOOM_FAST = 0.78;
 
 // ---------------------------------------------------------------------------
@@ -533,11 +537,27 @@ export const START_FROM_BEHIND = true;
  * arrives after ≈ 6 s, leaving the player time to get going instead of being
  * rear-ended while still waiting for "GO!".
  */
-export const START_ARRIVAL_S = 6;
+export const START_ARRIVAL_S = 4;
 /** Extra delay per lane towards the median (s). */
-export const START_ARRIVAL_STEP_S = 1.2;
-/** Never start the first car closer than this (px ≈ 65 m). */
-export const START_BEHIND_MIN = 1300;
+export const START_ARRIVAL_STEP_S = 0.6;
+/** Never start the first car closer than this (px ≈ 75 m). */
+export const START_BEHIND_MIN = 1500;
+/**
+ * Hard ceiling on the start grid (px = 210 m).
+ *
+ * Without it the grid distance was `ownSpeed × (4…5.8 s)`, which for a 295 km/h car
+ * is ~9500 px – and because the player drives almost as fast, the closing speed was
+ * only ~65 km/h, so that car needed the better part of a minute to arrive: "przez
+ * 30 s nic nie jedzie z tyłu". Capping the distance keeps the first contacts within
+ * seconds of "GO!" while the per-lane delays still stagger the grid.
+ */
+export const START_GRID_MAX_PX = 4200;
+/** Never re-enter closer than this to the player (px ≈ 100 m). */
+export const REENTRY_SAFE_MIN_PX = 2000;
+// (Removed: START_GUARD_PX / START_GUARD_S. A "grace window" that braked every
+//  approaching car stopped traffic level with the player during the countdown –
+//  other lanes had cars parked in the middle of the screen. The start is kept safe
+//  purely by geometry: REENTRY_SAFE_MIN_PX and the staggered start grid.)
 
 /**
  * ONE car per lane – 6 opponents in total.
@@ -572,7 +592,7 @@ export const OPPONENTS_PER_LANE = 1;
  */
 export const LANE_DENSITY: ReadonlyArray<number> = [2, 2, 1, 1, 1, 1];
 /** Minimum gap between two cars of the same lane when (re)spawning (px = 80 m). */
-export const SPAWN_SEPARATION_PX = 1600;
+export const SPAWN_SEPARATION_PX = 1000;
 
 /**
  * Traffic corridor: how far from the player a car may roam before it is recycled
@@ -582,9 +602,10 @@ export const SPAWN_SEPARATION_PX = 1600;
  * round much more often – with one car per lane that is what keeps the road
  * feeling busy without adding a single Matter body.
  */
-export const CORRIDOR_S = 2.5;
-export const CORRIDOR_MIN_PX = 1400; // 70 m
-export const CORRIDOR_MAX_PX = 3800; // 190 m
+export const CORRIDOR_S = 2;
+export const CORRIDOR_MIN_PX = 1100; // 55 m
+export const CORRIDOR_MAX_PX = 2200; // 110 m – was 3800, which is why fast-lane cars
+// hung around 190 m away and were almost never met
 
 /**
  * Re-entry spots, just outside the visible road, so a recycled car is seen
@@ -594,12 +615,12 @@ export const CORRIDOR_MAX_PX = 3800; // 190 m
  *   – behind the player (it catches the player up): ~0.8 s, i.e. it drives out
  *     from the bottom edge of the screen, as requested earlier.
  */
-export const REENTRY_AHEAD_S = 1.3;
-export const REENTRY_AHEAD_MIN_PX = 700;
-export const REENTRY_AHEAD_MAX_PX = 1500;
-export const REENTRY_BEHIND_S = 0.7;
-export const REENTRY_BEHIND_MIN_PX = 400;
-export const REENTRY_BEHIND_MAX_PX = 950;
+export const REENTRY_AHEAD_S = 1.6;
+export const REENTRY_AHEAD_MIN_PX = 900; // just above the visible edge (821 px at v-max)
+export const REENTRY_AHEAD_MAX_PX = 1400;
+export const REENTRY_BEHIND_S = 1;
+export const REENTRY_BEHIND_MIN_PX = 500;
+export const REENTRY_BEHIND_MAX_PX = 900;
 /** Safety factor: the respawn range must cover the initial distance. */
 export const START_BEHIND_MARGIN = 1.25;
 /**
@@ -688,7 +709,10 @@ export const CONTACT_SCALE = {
   headOn: 1,
   side: 0.3,
   corner: 0.26,
-  rear: 0.45,
+  // Rear-ending is now properly expensive: at 100 km/h of closing speed it costs
+  // 75 % of the car's health (it used to be 45 %), so running into the car in
+  // front really hurts even when both drive the same way.
+  rear: 0.75,
 } as const;
 
 /** Below this speed the contact is a scrape/knock, not an impact. */
