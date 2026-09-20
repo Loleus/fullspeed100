@@ -31,7 +31,9 @@ function Hold({
       onPointerCancel={set(false)}
       onContextMenu={(e) => e.preventDefault()}
       className={cn(
-        "retro-touch flex flex-col items-center justify-center leading-none font-bold",
+        // `shrink-0`: without it flex squashes the buttons when the row overflows
+        // on a narrow phone, which makes neighbours visually touch
+        "retro-touch flex shrink-0 flex-col items-center justify-center leading-none font-bold",
         className,
       )}
     >
@@ -57,10 +59,12 @@ function Hold({
 export function TouchControls() {
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-end justify-between px-3 select-none lg:hidden"
+      // `gap-6` keeps a clear lane between the steering pad and the pedal cluster:
+      // on a narrow phone the two groups used to end up shoulder to shoulder.
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-end justify-between gap-6 px-3 select-none lg:hidden"
       style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
     >
-      <div className="pointer-events-auto flex items-end gap-3">
+      <div className="pointer-events-auto flex shrink-0 items-end gap-3">
         <Hold name="left" label="◀" className="h-16 w-16 text-2xl" />
         <Hold name="right" label="▶" className="h-16 w-16 text-2xl" />
       </div>
@@ -71,7 +75,7 @@ export function TouchControls() {
         the arrow keys. All of them are the same 64 px square; only the colours
         separate them, so the strip stays even and easy to hit with a thumb.
       */}
-      <div className="pointer-events-auto flex items-end gap-3">
+      <div className="pointer-events-auto flex shrink-0 items-end gap-3">
         <Hold
           name="brake"
           label="SPACJA"
