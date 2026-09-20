@@ -211,10 +211,18 @@ export default function App() {
   }, [lang]);
 
   const inMenu = phase === "menu" || phase === "boot";
+  /**
+   * Touch pads only while the car is actually drivable: not in the menu (they
+   * would sit under the menu buttons) and not on the results screen (they would
+   * cover the stat card and are useless once the run is over).
+   */
+  const showPads = phase === "countdown" || phase === "playing";
 
   return (
-    // the page backdrop (photo + saturation blend + blur) lives on <body>
-    <div className="flex h-[100svh] w-full items-center justify-center overflow-hidden">
+    // On phones the game is pinned to the TOP EDGE (`items-start`) so the canvas
+    // starts exactly at the top of the screen; on desktop there is room to spare,
+    // so it stays centred on the backdrop photo.
+    <div className="flex h-[100svh] w-full items-start justify-center overflow-hidden lg:items-center">
       <div
         className="game-frame relative aspect-[3/5] overflow-hidden bg-black"
         // container sized typography: the menu logo scales with the game board
@@ -228,9 +236,6 @@ export default function App() {
         <HitFlash pulse={hitPulse} health={hud?.health ?? 100} />
         <Hud hud={hud} t={t} />
         <CheckpointBanner info={checkpoint} t={t} />
-        {/* touch pads only while driving – in the menu they would sit on top of
-            the menu buttons now that the dimming layer is gone */}
-        {!inMenu && <TouchControls />}
 
         {/* Nothing else is drawn over the road while driving – restart (R),
             menu (ESC) and mute (M) are keyboard/touch driven. */}
@@ -270,6 +275,12 @@ export default function App() {
           />
         )}
       </div>
+
+      {/* Outside the game frame on purpose: `fixed` children of a
+          `container-type` element are positioned and clipped against IT, which is
+          exactly what we are moving away from – the pads must follow the phone's
+          bottom edge, not the canvas. */}
+      {showPads && <TouchControls />}
     </div>
   );
 }
