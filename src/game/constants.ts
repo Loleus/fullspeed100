@@ -107,7 +107,7 @@ export const ROAD_TEX_OFFSET_X = ROAD_TEX_EXTRA_W / 2;
 export const FRAC_SLOW = 6 / 7; // car 1/7 from the bottom at standstill
 export const FRAC_FAST = 0.8; // car 1/5 from the bottom at v-max
 export const ZOOM_SLOW = 1.0;
-export const ZOOM_FAST = 0.66;
+export const ZOOM_FAST = 0.78;
 
 // ---------------------------------------------------------------------------
 // Camera rise window
