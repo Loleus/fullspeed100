@@ -181,18 +181,36 @@ export function Hud({ hud, t }: { hud: HudData | null; t: Strings }) {
 
       {/* FULL SPEED watermark, top centre (opacity grows with speed) */}
       <div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center">
+        {/* Each line carries its OWN glow colour (blue for FULL, red for SPEED) and
+            the halo grows with speed – a glow like on the buttons, not a flat
+            drop-shadow. */}
         <span
           className="retro-title flex flex-col items-center leading-[0.8] whitespace-nowrap"
           style={{
             opacity: logoOpacity,
             transform: `scale(${0.94 + 0.08 * speedT})`,
-            textShadow: `1px 1px 3px #000, 0 0 ${6 + 22 * speedT}px rgba(19,236,114,${
-              0.14 + 0.6 * speedT
-            })`,
           }}
         >
-          <span className="text-[20px] text-[#1372c5] sm:text-[24px]">FULL</span>
-          <span className="text-[20px] text-[#c60e0e] sm:text-[24px]">SPEED</span>
+          <span
+            className="text-[20px] text-[#1372c5] sm:text-[24px]"
+            style={{
+              textShadow: `0 1px 2px rgba(0,0,0,0.5), 0 0 2px rgba(19,114,197,0.95), 0 0 ${
+                8 + 22 * speedT
+              }px rgba(19,114,197,0.75), 0 0 ${18 + 30 * speedT}px rgba(19,114,197,0.45)`,
+            }}
+          >
+            FULL
+          </span>
+          <span
+            className="text-[20px] text-[#c60e0e] sm:text-[24px]"
+            style={{
+              textShadow: `0 1px 2px rgba(0,0,0,0.5), 0 0 2px rgba(198,14,14,0.95), 0 0 ${
+                8 + 22 * speedT
+              }px rgba(198,14,14,0.75), 0 0 ${18 + 30 * speedT}px rgba(198,14,14,0.45)`,
+            }}
+          >
+            SPEED
+          </span>
         </span>
       </div>
 

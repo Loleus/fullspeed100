@@ -63,12 +63,33 @@ export function MainMenu({
     // logo pinned to the top, buttons vertically centred exactly as before the
     // record card was removed (it used to be the third, bottom item)
     <div ref={rootRef} className="absolute inset-0 z-30 flex flex-col items-center px-5 py-5">
+      {/*
+        Logo glow: each line is lit in its own colour – "FULL" blue, "SPEED" red –
+        with the same layered neon shadow used by the buttons (tight 2 px core plus
+        10/26 px halos). The heavy black drop-shadow is gone: this is a glow, not a
+        shadow.
+      */}
       <h1
-        className="retro-title w-full text-center leading-[0.78] drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]"
+        className="retro-title w-full text-center leading-[0.78]"
         style={{ fontSize: "clamp(2.6rem, 20cqw, 7rem)" }}
       >
-        <span className="block text-[#1372c5]">FULL</span>
-        <span className="block text-[#c60e0e]" style={{ fontSize: "0.86em" }}>
+        <span
+          className="block text-[#1372c5]"
+          style={{
+            textShadow:
+              "1px 2px 2px rgba(0,0,0,0.55), 0 0 2px rgba(19,114,197,0.95), 0 0 10px rgba(19,114,197,0.8), 0 0 26px rgba(19,114,197,0.55)",
+          }}
+        >
+          FULL
+        </span>
+        <span
+          className="block text-[#c60e0e]"
+          style={{
+            fontSize: "0.86em",
+            textShadow:
+              "1px 2px 2px rgba(0,0,0,0.55), 0 0 2px rgba(198,14,14,0.95), 0 0 10px rgba(198,14,14,0.8), 0 0 26px rgba(198,14,14,0.55)",
+          }}
+        >
           SPEED
         </span>
       </h1>
