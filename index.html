@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>FULL SPEED</title>
+    <meta
+      name="description"
+      content="FULL SPEED - wyścigi samochodowe, 6 paswó, ruch w obie strony, 6 biegów, uszkodzenia, checkpointy co 10 km i cel 100 km."
+    />
+    <meta name="theme-color" content="#0f2609" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- PWA. Icons are the game's own car + road (public/icons/*.svg, scalable),
+         plus rasters for the platforms that insist on bitmaps.
+         NOTE: every URL below is ABSOLUTE (https://loleus.github.io/fullspeed/…)
+         – the published address is defined once in `.env` (VITE_SITE_URL) and
+         substituted here at build time. -->
+    <link rel="manifest" href="%VITE_SITE_URL%manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="%VITE_SITE_URL%favicon.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="64x64" href="%VITE_SITE_URL%icons/icon-64.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="128x128" href="%VITE_SITE_URL%icons/icon-128.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="%VITE_SITE_URL%icons/icon-192.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="256x256" href="%VITE_SITE_URL%icons/icon-256.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="512x512" href="%VITE_SITE_URL%icons/icon-512.svg" />
+    <link rel="mask-icon" href="%VITE_SITE_URL%favicon.svg" color="#d62828" />
+    <!-- iOS home screen: PNG only, so use the raster set -->
+    <link rel="apple-touch-icon" sizes="180x180" href="%VITE_SITE_URL%icons/apple-touch-icon-180.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="%VITE_SITE_URL%icons/apple-touch-icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FULL SPEED" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="FULL SPEED" />
+
+    <!-- Open Graph / Twitter – absolute URLs, as every crawler requires. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FULL SPEED" />
+    <meta property="og:title" content="FULL SPEED" />
+    <meta
+      property="og:description"
+      content="9999 tras. 6 pasów, ruch w obie strony, 6 biegów i v-max 370 km/h. Checkpoint co 10 km naprawia auto — dojedź do 100 km."
+    />
+    <meta property="og:url" content="%VITE_SITE_URL%" />
+    <meta property="og:image" content="%VITE_SITE_URL%og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="FULL SPEED -autostrada z lotu ptaka" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FULL SPEED - gra samochodowa." />
+    <meta
+      name="twitter:description"
+      content="9999 tras. 6 pasów, ruch w obie strony, 6 biegów i v-max 370 km/h. Checkpoint co 10 km naprawia auto — dojedź do 100 km."
+    />
+    <meta name="twitter:image" content="%VITE_SITE_URL%og-image.png" />
+
+    <!-- The logo font (Faster One) is self-hosted next to the game and pulled
+         in by @font-face in src/index.css; no Google Fonts request any more.
+         Pre-warm it so the title screen paints with the right face at once. -->
+    <link
+      rel="preload"
+      href="%VITE_SITE_URL%assets/fonts/FasterOne-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Page backdrop (desktop only – on a phone the game frame covers the whole
+         viewport). Kept as a CSS variable so the single `%VITE_SITE_URL%` knob
+         drives it as well: absolute in the base/PWA builds, rewritten to a
+         relative path by the portal build. -->
+    <style>
+      :root {
+        /* The ORIGINAL photograph, assets/img/bcg.jpg:
+             1. the copy shipped in this build (public/assets/img/bcg.jpg – the
+                build downloads it from the repository if it is missing, see
+                vite.backdrop-plugin.ts / `node scripts/fetch-backdrop.mjs`),
+             2. the published site (GitHub Pages) – production,
+             3. the original file in Loleus/fullspeed – before deployment.
+           No generated or substituted image is used anywhere in this chain. */
+        --app-backdrop:
+          url("./assets/img/bcg.jpg"),
+          url("%VITE_SITE_URL%assets/img/bcg.jpg"),
+          url("https://raw.githubusercontent.com/Loleus/fullspeed/main/assets/img/bcg.jpg");
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

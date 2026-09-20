@@ -1,0 +1,34 @@
+{
+  "name": "FULL SPEED",
+  "short_name": "FULL SPEED",
+  "description": "Szalona jazda autostradą: 6 pasów, 6 biegów, cel 100 km.",
+  "lang": "pl",
+  "dir": "ltr",
+  "id": "fullspeed",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#0f2609",
+  "categories": ["games", "racing"],
+  "icons": [
+    { "src": "./icons/icon-64.svg", "sizes": "64x64", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/icon-128.svg", "sizes": "128x128", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/icon-256.svg", "sizes": "256x256", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/icon-512.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icons/apple-touch-icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nowy przejazd",
+      "short_name": "Start",
+      "description": "Od razu na autostradę – cel 100 km",
+      "url": "./?start=1"
+    }
+  ]
+}

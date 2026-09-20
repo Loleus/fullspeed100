@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 480 480" shape-rendering="crispEdges">
+  <!-- Art identical to icon-512.svg (the game's own car + road), just declared
+       at 192x192; SVG scales losslessly so every size looks the same. -->
+  <rect width="480" height="480" fill="#2f6b2c"/>
+  <rect width="480" height="240" fill="#2c6529"/>
+  <rect x="24" width="24" height="480" fill="#8e8a7a"/>
+  <rect x="432" width="24" height="480" fill="#8e8a7a"/>
+  <rect x="22" width="6" height="480" fill="#c4c7cc"/>
+  <rect x="452" width="6" height="480" fill="#c4c7cc"/>
+  <rect x="48" width="384" height="480" fill="#3b3b43"/>
+  <rect x="52" width="6" height="480" fill="#f4f4f4"/>
+  <rect x="422" width="6" height="480" fill="#f4f4f4"/>
+  <rect x="166" width="6" height="480" fill="#f4f4f4"/>
+  <rect x="184" width="6" height="480" fill="#f4f4f4"/>
+  <rect x="110" width="6" height="140" fill="#f4f4f4"/>
+  <rect x="110" y="240" width="6" height="140" fill="#f4f4f4"/>
+  <rect x="238" width="6" height="140" fill="#f4f4f4"/>
+  <rect x="238" y="240" width="6" height="140" fill="#f4f4f4"/>
+  <rect x="302" width="6" height="140" fill="#f4f4f4"/>
+  <rect x="302" y="240" width="6" height="140" fill="#f4f4f4"/>
+  <rect x="366" width="6" height="140" fill="#f4f4f4"/>
+  <rect x="366" y="240" width="6" height="140" fill="#f4f4f4"/>
+  <rect x="206" y="216" width="14" height="32" fill="#151515"/>
+  <rect x="260" y="216" width="14" height="32" fill="#151515"/>
+  <rect x="206" y="316" width="14" height="32" fill="#151515"/>
+  <rect x="260" y="316" width="14" height="32" fill="#151515"/>
+  <rect x="212" y="196" width="56" height="168" rx="12" fill="#96201c"/>
+  <rect x="215" y="199" width="50" height="162" rx="10" fill="#d62828"/>
+  <rect x="220" y="208" width="40" height="22" rx="4" fill="#e8453f"/>
+  <rect x="217" y="240" width="46" height="30" rx="5" fill="#1b2733"/>
+  <rect x="217" y="274" width="46" height="44" fill="#b8231f"/>
+  <rect x="217" y="322" width="46" height="18" rx="4" fill="#1b2733"/>
+  <rect x="230" y="204" width="7" height="32" fill="#ffffff"/>
+  <rect x="243" y="204" width="7" height="32" fill="#ffffff"/>
+  <rect x="216" y="200" width="12" height="8" rx="2" fill="#fff4c2"/>
+  <rect x="252" y="200" width="12" height="8" rx="2" fill="#fff4c2"/>
+  <rect x="216" y="352" width="12" height="8" rx="2" fill="#ff2a2a"/>
+  <rect x="252" y="352" width="12" height="8" rx="2" fill="#ff2a2a"/>
+</svg>

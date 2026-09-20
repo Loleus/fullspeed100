@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 480 480" shape-rendering="crispEdges">
+  <!-- 64x64: only the boldest shapes survive – asphalt, shoulders, the double
+       centre line and the game's red car, slightly enlarged so it reads. -->
+  <rect width="480" height="480" fill="#2f6b2c"/>
+  <rect x="24" width="24" height="480" fill="#8e8a7a"/>
+  <rect x="432" width="24" height="480" fill="#8e8a7a"/>
+  <rect x="48" width="384" height="480" fill="#3b3b43"/>
+  <rect x="160" width="16" height="480" fill="#f4f4f4"/>
+  <rect x="184" width="16" height="480" fill="#f4f4f4"/>
+  <g transform="translate(240 240) scale(1.35) translate(-240 -240)">
+    <rect x="206" y="216" width="16" height="34" fill="#151515"/>
+    <rect x="258" y="216" width="16" height="34" fill="#151515"/>
+    <rect x="206" y="314" width="16" height="34" fill="#151515"/>
+    <rect x="258" y="314" width="16" height="34" fill="#151515"/>
+    <rect x="210" y="196" width="60" height="168" rx="12" fill="#d62828"/>
+    <rect x="218" y="238" width="44" height="34" rx="5" fill="#1b2733"/>
+    <rect x="218" y="278" width="44" height="40" fill="#b8231f"/>
+    <rect x="218" y="324" width="44" height="20" rx="4" fill="#1b2733"/>
+    <rect x="216" y="199" width="16" height="10" rx="2" fill="#fff4c2"/>
+    <rect x="248" y="199" width="16" height="10" rx="2" fill="#fff4c2"/>
+    <rect x="216" y="350" width="16" height="10" rx="2" fill="#ff2a2a"/>
+    <rect x="248" y="350" width="16" height="10" rx="2" fill="#ff2a2a"/>
+  </g>
+</svg>

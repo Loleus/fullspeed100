@@ -1,0 +1,410 @@
+@import "tailwindcss";
+
+/* Display face of the FULL SPEED logo – self-hosted next to the published game
+   (absolute URL, no CDN and no `./` path). */
+@font-face {
+  font-family: "Faster One";
+  src: url("https://loleus.github.io/fullspeed/assets/fonts/FasterOne-Regular.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Display face used by the copyright line on the title screen —
+   Yarin-Regular, loaded from the original repository. */
+@font-face {
+  font-family: "Yarin";
+  src:
+    url("https://raw.githubusercontent.com/Loleus/glutzelek/main/fonts/Yarin-Regular.woff2")
+      format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* The root layer must not paint a background of its own – `body::after` sits at
+   z-index -1 and the backdrop on <body> would otherwise be hidden. */
+#root {
+  position: relative;
+  z-index: 0;
+  background: transparent;
+}
+
+body {
+  /* `relative` so the ::before / ::after layers can be positioned against it */
+  position: relative;
+  margin: 0;
+  color: #c2e6bb;
+  overflow: hidden;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+
+  /* Fallback colour while the JPEG is still downloading. */
+  background-color: #000;
+}
+
+/* ---------------------------------------------------------------------
+   Backdrop layer = the ORIGINAL game's photograph, assets/img/bcg.jpg from
+   Loleus/fullspeed (never a stand-in image; see --app-backdrop in index.html).
+   Layer order (bottom → top): the photo, an opaque green filter gradient, then
+   the vignette in ::after.
+   `background-blend-mode: saturation` recolours the photo to that green (the
+   layer has to stay opaque – blending straight onto black has zero luminance
+   and would black the picture out).
+   THE BLUR: a real `filter: blur(3px)`, not `backdrop-filter` – backdrop-filter
+   only blurs what lies BEHIND the element, so on a page backdrop it shows
+   nothing. `inset` is negative by the blur radius so the softened edges are
+   pushed outside the viewport instead of showing a transparent rim.
+   --------------------------------------------------------------------- */
+body::before {
+  content: "";
+  position: fixed;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  z-index: -2;
+  pointer-events: none;
+  /* fallback colour behind the photo (and what you see if the file is missing) */
+  background-color: #000;
+  /* fallback colour behind the photo (and what you see if the file is missing) */
+  background-color: #12330d;
+  /*
+     ONLY THE PHOTOGRAPH – no gradient, no blend modes. There is nothing left in
+     here that could be "tinted" instead of the picture.
+  */
+  background-image: var(--app-backdrop, none);
+  background-size: cover, cover, cover;
+  background-position: center center, center center, center center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  /*
+     THE GREEN FILTER IS APPLIED TO THE IMAGE ITSELF, with `filter`:
+       grayscale   – throws its own colours away
+       sepia       – gives it a uniform base tone to shift
+       hue-rotate  – turns that tone into the game's green
+       saturate    – deepens the green
+       brightness  – the requested ~20 % darkening
+     Filters act on the rendered output of the element, so this tints every pixel
+     of the background photograph, independently of every other layer.
+  */
+  filter: hue-rotate(5deg) saturate(0.8) brightness(1) blur(1.6px);
+  -webkit-filter: hue-rotate(5deg) saturate(0.8) brightness(1) blur(1.6px);
+}
+
+/* Vignette – grey, straight from the original stylesheet, drawn ON TOP of the
+   green-filtered photograph: `radial-gradient(circle at center, #0000 40%,
+   #1b1b1b 100%)`. Nothing is blended here, so the tinted photo below shows
+   through the transparent centre untouched. */
+body::after {
+  content: "";
+  position: fixed;
+  display: block;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* above the tinted photo (::before = -2), still behind #root (0) */
+  z-index: -1;
+  box-sizing: border-box;
+  pointer-events: none;
+  /* THE VIGNETTE – exactly as in the original: one circle, transparent centre,
+     GREY rim. It sits ON TOP of the green-filtered photo (that is the whole
+     point: green image below, grey vignette above). */
+  background-image: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0) 40%,
+    rgb(27, 27, 27) 100%
+  );
+  background-repeat: no-repeat;
+}
+
+canvas {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+   Retro styling taken from the original FULL SPEED (Loleus/fullspeed):
+   green glass info bar, grey/cream buttons with green active state, the
+   "Faster One" display face and the green neon glow on monospace values.
+   --------------------------------------------------------------------------- */
+/* Vertical side modules of the dashboard (they stand on the shoulders of the
+   road, so no lane is covered).
+   ONLY the transparency was switched off: the colour is the same green as
+   before (#1b5713 is rgba(15,75,3,.62) composited over the grass), just no
+   longer see-through. */
+.retro-side {
+  background: #1b5713;
+  color: #c2e6bb;
+  text-shadow: 0 0 1px #13ec72;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.65);
+}
+
+.retro-side-l {
+  border-right: 2px solid #15b536;
+  border-radius: 0 14px 14px 0;
+}
+
+.retro-side-r {
+  border-left: 2px solid #15b536;
+  border-radius: 14px 0 0 14px;
+}
+
+/* Info card: fully opaque, so it never mixes with the road behind it. */
+.retro-info {
+  background: #12330d;
+  border: 0;
+  border-radius: 14px;
+  color: #c2e6bb;
+  text-shadow: 0 0 1px #13ec72;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.retro-label {
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  /* same tone as the old rgba(194,230,187,.62) on the panel, only opaque */
+  color: #83b07b;
+}
+
+/* Larger variant for the two long captions on the side panels
+   ("DAMAGE" / "PROGRESS"), which are read at a glance while driving. */
+.retro-label-lg {
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: #a7d3a0;
+}
+
+/* Vertical caption used by BOTH side gauges ("DAMAGE" and "PROGRESS").
+   One shared class, one convention:
+     • both read bottom-to-top (like the spine of a book),
+     • the bar always comes AFTER the caption,
+     • the caption is aligned to the bottom edge of the bar, never centred.
+   `display: inline-block` is required for the rotation to apply even when the
+   element is not a flex item. */
+.retro-label-v {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* The backdrop lives on <body> (see above) so the whole page – including the
+   area around the game frame – shows the blended photo. `--app-backdrop` is
+   defined in index.html from %VITE_SITE_URL%, therefore the URL is absolute in
+   the published/PWA build and relative in the portal ZIP. On phones the game
+   frame fills the viewport and none of this is visible. */
+
+/* Drop shadow under the game frame, so it reads as a screen standing on the
+   backdrop photo (on mobile the frame covers the viewport and it is invisible). */
+.game-frame {
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.75),
+    0 6px 18px rgba(0, 0, 0, 0.6);
+}
+
+.retro-glow {
+  text-shadow:
+    0 0 2px rgba(19, 236, 114, 0.9),
+    0 0 10px rgba(19, 236, 114, 0.35);
+}
+
+.retro-title {
+  font-family: "Faster One", "Arial Black", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-shadow: 1px 1px 3px #000;
+}
+
+/* Copyright line at the bottom of the title screen. */
+.copyright {
+  font-family: "Yarin", ui-serif, Georgia, serif;
+  color: #8bf;
+  font-size: 1.3rem;
+  text-shadow:
+    0 0 5px #8bf,
+    0 0 20px #8bf,
+    0 0 30px #8bf,
+    0 0 40px #8bf;
+}
+
+/* Menu / modal card: OPAQUE – nothing may shine through from behind it. */
+.retro-select {
+  background: #0f2609;
+  border: 0;
+  border-radius: 12px;
+  box-shadow:
+    0 14px 44px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+/* Settings / seed modal: solid panel, no frame – the same small, tight shadow
+   as the record board (.retro-modal-bright). */
+.retro-modal {
+  background: #0f2609;
+  border: 0;
+  border-radius: 14px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* Record board: same green gradient as the primary menu button (btn-primary:
+   linear-gradient(#2f8442, #1c5227)), bright and celebratory, with a small,
+   tight shadow instead of a big diffuse one. */
+.retro-modal-bright {
+  background: linear-gradient(#2f8442, #1c5227);
+  border: 0;
+  border-radius: 14px;
+  color: #f2ffe9;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* Menu buttons: EVERY button is a solid, opaque surface with NO border/outline –
+   separation comes from the background tone and the shadow, not from frames. */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  outline: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  text-align: center;
+  color: #c2e6bb;
+  background: #14300b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease,
+    transform 0.06s ease;
+}
+
+.btn:hover {
+  background: #1c4512;
+  color: #eaffdf;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* state "on" for FX / MUSIC / fullscreen */
+.btn-on {
+  background: #23532d;
+  color: #7dff5a;
+  box-shadow:
+    0 0 12px rgba(19, 236, 114, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.btn-primary {
+  padding: 10px 12px;
+  font-size: 17px;
+  letter-spacing: 0.18em;
+  color: #eaffdf;
+  background: linear-gradient(#2f8442, #1c5227);
+  text-shadow: 0 0 6px rgba(19, 236, 114, 0.55);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.6),
+    0 0 18px rgba(19, 236, 114, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(#37a04f, #20612e);
+}
+
+.btn-ghost {
+  background: #3b3b3b;
+  color: #f2dfb3;
+}
+
+.btn-ghost:hover {
+  background: #4a4a4a;
+  color: #fff6e0;
+}
+
+/* Touch pads: opaque, but with the very same greens as the translucent
+   originals (rgba(45,112,32,.76) over grass = #2d6f23). */
+.retro-touch {
+  border-radius: 9999px;
+  border: 3px solid #35d71a;
+  background: #2d6f23;
+  color: #d8ffcd;
+  text-shadow: 0 0 2px rgba(19, 236, 114, 0.8);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  user-select: none;
+  touch-action: none;
+}
+
+.retro-touch-red {
+  border-color: #d31a1a;
+  background: #722917;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes hitFlash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes cpBanner {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.99);
+  }
+}
